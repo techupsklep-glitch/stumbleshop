@@ -353,7 +353,7 @@ nav a:hover {
     <input type="text" id="zip" placeholder="Kod pocztowy" required>
     <input type="email" id="email" placeholder="Email" required>
     <p>Przelew na numer konta:</p>
-    <b>12 3456 7890 1234 5678 9012 3456</b><br>
+    <b>13 1020 4027 0000 1402 1854 0095</b><br>
     <p>Tytuł przelewu:</p>
     <b>Zamówienie StumbleShop</b><br>
     <p>Kwota do zapłaty:</p>
@@ -368,7 +368,7 @@ nav a:hover {
 <h2>Dziękujemy za zamówienie!</h2>
 <div id="summaryItems"></div>
 <p id="summaryTotal"></p>
-<p>Proszę dokonać przelewu na konto: <b>12 3456 7890 1234 5678 9012 3456</b></p>
+<p>Proszę dokonać przelewu na konto: <b>13 1020 4027 0000 1402 1854 0095</b></p>
 <p>Tytuł przelewu: <b>Zamówienie StumbleShop</b></p>
 <p>Po zaksięgowaniu płatności, zamówienie zostanie wysłane na wskazany adres.</p>
 <button onclick="backToCollection()">Powrót do kolekcji</button>
@@ -427,108 +427,87 @@ const products = {
     "jnco-chains": {name:"Jnco Chains", price:199, imgs:["5.jpg","5_.jpg"]},
     "harold-hoodie": {name:"Harold Hoodie", price:349, imgs:["6.jpg","6_.jpg"]}
 };
+let currentProduct = null;
+let currentImgIndex = 0;
+let cart = [];
 
-let currentItem=null;
-let currentImgIndex=0;
-
+// PRODUCT PAGE
 function openProduct(id){
-    currentItem=id;
-    currentImgIndex=0;
-    const p=products[id];
-    document.getElementById("pTitle").innerText=p.name;
-    document.getElementById("pPrice").innerText=p.price+" PLN";
-    document.getElementById("pImg").src=p.imgs[0];
-    showPage("productPage");
+    currentProduct = id;
+    currentImgIndex = 0;
+    document.getElementById("collection").style.display="none";
+    document.getElementById("productPage").style.display="block";
+    document.getElementById("pTitle").innerText = products[id].name;
+    document.getElementById("pPrice").innerText = products[id].price+" PLN";
+    document.getElementById("pImg").src = products[id].imgs[currentImgIndex];
 }
-
-// IMAGE CAROUSEL
 function prevImg(){
-    if(!currentItem) return;
-    const imgs=products[currentItem].imgs;
-    currentImgIndex=(currentImgIndex-1+imgs.length)%imgs.length;
-    document.getElementById("pImg").src=imgs[currentImgIndex];
+    if(!currentProduct) return;
+    currentImgIndex = (currentImgIndex-1+products[currentProduct].imgs.length)%products[currentProduct].imgs.length;
+    document.getElementById("pImg").src = products[currentProduct].imgs[currentImgIndex];
 }
 function nextImg(){
-    if(!currentItem) return;
-    const imgs=products[currentItem].imgs;
-    currentImgIndex=(currentImgIndex+1)%imgs.length;
-    document.getElementById("pImg").src=imgs[currentImgIndex];
+    if(!currentProduct) return;
+    currentImgIndex = (currentImgIndex+1)%products[currentProduct].imgs.length;
+    document.getElementById("pImg").src = products[currentProduct].imgs[currentImgIndex];
 }
-// auto carousel every 3 sec
-setInterval(()=>{
-    if(currentItem) nextImg();
-},3000);
 
 // CART
 function addToCart(){
-    const size=document.getElementById("pSize").value;
-    if(!size){alert("Wybierz rozmiar"); return;}
-    let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-    cart.push({id:currentItem,size:size});
-    localStorage.setItem("cart",JSON.stringify(cart));
-    updateCartCounter();
+    const size = document.getElementById("pSize").value;
+    if(!size){alert("Wybierz rozmiar");return;}
+    cart.push({id:currentProduct,size:size});
     alert("Dodano do koszyka!");
+    document.getElementById("cartCounter").innerText = cart.length;
 }
 
-function updateCartCounter(){
-    let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-    document.getElementById("cartCounter").innerText=cart.length;
-}
-
+// SHOW CART
 function showCart(){
-    let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-    let list="";
+    const cartList = document.getElementById("cartList");
+    cartList.innerHTML="";
     let total=0;
-    cart.forEach((item,index)=>{
-        const p=products[item.id];
+    cart.forEach((item,i)=>{
+        const p = products[item.id];
         total+=p.price;
-        list+=`<div class="item">
-            <img src="${p.imgs[0]}">
-            ${p.name} — ${p.price} PLN — Rozmiar: ${item.size}
-            <button onclick="removeItem(${index})">❌</button>
-        </div>`;
+        const div=document.createElement("div");
+        div.className="item";
+        div.innerHTML=`<img src="${p.imgs[0]}"><div>${p.name} - ${item.size} - ${p.price} PLN</div>`;
+        cartList.appendChild(div);
     });
-    document.getElementById("cartList").innerHTML=list||"<p>Twój koszyk jest pusty</p>";
     document.getElementById("totalPrice").innerText="Łącznie: "+total+" PLN";
-    document.getElementById("checkoutAmount").innerText=total+" PLN";
+    document.getElementById("checkoutAmount").innerText = total+" PLN";
 }
 
-function removeItem(index){
-    let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-    cart.splice(index,1);
-    localStorage.setItem("cart",JSON.stringify(cart));
-    showCart();
-    updateCartCounter();
-}
-
-// ORDER
+// CONFIRM ORDER
 function confirmOrder(){
-    let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-    if(cart.length===0){alert("Koszyk pusty!"); return;}
-    const fullname=document.getElementById("fullname").value;
-    const address=document.getElementById("address").value;
-    const zip=document.getElementById("zip").value;
-    const email=document.getElementById("email").value;
-    if(!fullname||!address||!zip||!email){alert("Wypełnij wszystkie pola"); return;}
-    let summary="";
+    const fullname = document.getElementById("fullname").value;
+    const address = document.getElementById("address").value;
+    const zip = document.getElementById("zip").value;
+    const email = document.getElementById("email").value;
+    if(!fullname || !address || !zip || !email){alert("Wypełnij wszystkie pola!"); return;}
+    document.getElementById("checkoutPage").style.display="none";
+    const summaryItems = document.getElementById("summaryItems");
+    summaryItems.innerHTML="";
     let total=0;
     cart.forEach(item=>{
-        const p=products[item.id];
+        const p = products[item.id];
         total+=p.price;
-        summary+=`<div class="summary-item">${p.name} — ${p.price} PLN — Rozmiar: ${item.size}</div>`;
+        const div = document.createElement("div");
+        div.className="summary-item";
+        div.innerText=`${p.name} - ${item.size} - ${p.price} PLN`;
+        summaryItems.appendChild(div);
     });
-    document.getElementById("summaryItems").innerHTML=summary;
-    document.getElementById("summaryTotal").innerText="Łącznie: "+total+" PLN";
-    localStorage.removeItem("cart");
-    updateCartCounter();
-    showPage("orderSummary");
+    document.getElementById("summaryTotal").innerText="Łącznie do zapłaty: "+total+" PLN";
+    document.getElementById("orderSummary").style.display="block";
 }
 
-function backToCollection(){ showPage("collection"); }
-
-// INIT
-updateCartCounter();
-showPage("collection");
+// BACK TO COLLECTION
+function backToCollection(){
+    cart=[];
+    document.getElementById("cartCounter").innerText = 0;
+    showPage("collection");
+}
 </script>
+
 </body>
 </html>
